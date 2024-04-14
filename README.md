@@ -2,6 +2,15 @@
 
 Drivers onboard f1tenth race cars. This branch is under development for migration to ROS2. See the [documentation of F1TENTH](https://f1tenth.readthedocs.io/en/foxy_test/getting_started/firmware/index.html) on how to get started.
 
+## How to install
+```
+cd ~/ros2_ws/src
+git clone git@github.com:iASL-Gifu/f1tenth_system.git --recursive
+cd ~/ros2_ws
+rosdep update && rosdep install --from-paths src -i -y
+colcon build --symlink-install
+```
+
 ## Deadman's switch
 On Logitech F-710 joysticks, the LB button is the deadman's switch for teleop, and the RB button is the deadman's switch for navigation. You can also remap buttons. See how on the readthedocs documentation.
 
