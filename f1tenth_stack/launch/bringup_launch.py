@@ -118,7 +118,7 @@ def generate_launch_description():
         executable='ackermann_mux',
         name='ackermann_mux',
         parameters=[LaunchConfiguration('mux_config')],
-        remappings=[('ackermann_cmd_out', 'ackermann_drive')]
+        remappings=[('ackermann_drive_out', 'ackermann_cmd')]
     )
     static_tf_node = Node(
         package='tf2_ros',
@@ -126,6 +126,20 @@ def generate_launch_description():
         name='static_baselink_to_laser',
         arguments=['0.27', '0.0', '0.11', '0.0', '0.0', '0.0', 'base_link', 'laser']
     )
+    twist_stamp_node = Node(
+        package='twist_stamper',
+        executable='twist_stamper',
+        remappings=[('cmd_vel_in', 'cmd_vel'), ('cmd_vel_out', 'cmd_twist')],
+        parameters=[{'frame_id': 'map'}]
+    )
+    twist_to_ackermann_node = Node(
+        package='twist_to_ackermann',
+        executable='twist_to_ackermann',
+        remappings=[('nav_vel', 'cmd_twist'), ('ack_vel', 'drive')],
+        parameters=[{'wheelbase': 0.5}, {'use_stamps': True}]
+    )
+
+
 
     # finalize
     ld.add_action(joy_node)
