@@ -51,6 +51,11 @@ def generate_launch_description():
         'config',
         'mux.yaml'
     )
+    odom_config = os.path.join(
+        get_package_share_directory('f1tenth_stack'),
+        'config',
+        'ekf.yaml'
+    )
 
     joy_la = DeclareLaunchArgument(
         'joy_config',
@@ -68,8 +73,12 @@ def generate_launch_description():
         'mux_config',
         default_value=mux_config,
         description='Descriptions for ackermann mux configs')
+    odom_la = DeclareLaunchArgument(
+        'odom_config',
+        default_value=odom_config,
+        description='Descriptions for robot localization configs')
 
-    ld = LaunchDescription([joy_la, vesc_la, sensors_la, mux_la])
+    ld = LaunchDescription([joy_la, vesc_la, sensors_la, mux_la, odom_la])
 
     joy_node = Node(
         package='joy',
@@ -120,12 +129,6 @@ def generate_launch_description():
         parameters=[LaunchConfiguration('mux_config')],
         remappings=[('ackermann_drive_out', 'ackermann_cmd')]
     )
-    static_tf_node = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_baselink_to_laser',
-        arguments=['0.27', '0.0', '0.11', '0.0', '0.0', '0.0', 'base_link', 'laser']
-    )
     twist_stamp_node = Node(
         package='twist_stamper',
         executable='twist_stamper',
@@ -136,7 +139,47 @@ def generate_launch_description():
         package='twist_to_ackermann',
         executable='twist_to_ackermann',
         remappings=[('nav_vel', 'cmd_twist'), ('ack_vel', 'drive')],
-        parameters=[{'wheelbase': 0.5}, {'use_stamps': True}]
+        parameters=[{'wheelbase': 0.345}, {'use_stamps': True}]
+    )
+    # static_tf_node1 = Node(
+    #     package='tf2_ros',
+    #     executable='static_transform_publisher',
+    #     name='static_basefootprint_to_baselink',
+    #     arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', 'base_footprint', 'base_link']
+    # )
+    static_tf_node2 = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_baselink_to_laser',
+        arguments=['0.27', '0.0', '0.11', '0.0', '0.0', '0.0', 'base_link', 'laser']
+    )
+    static_tf_node3 = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_baselink_to_imu',
+        arguments=['0.07', '0.0', '0.05', '0.0', '0.0', '0.7071068', '0.7071068', 'base_link', 'imu']
+    )
+    # rf2o_laser_odometry_node = Node(
+    #     package='rf2o_laser_odometry',
+    #     executable='rf2o_laser_odometry_node',
+    #     name='rf2o_laser_odometry',
+    #     output='log',
+    #     parameters=[{
+    #         'laser_scan_topic' : '/scan',
+    #         'odom_topic' : '/odom_rf2o',
+    #         'publish_tf' : False,
+    #         'base_frame_id' : 'base_footprint',
+    #         'odom_frame_id' : 'odom',
+    #         'init_pose_from_topic' : '',
+    #         'freq' : 50.0}],
+    #     # arguments=['--ros-args', '--log-level', 'debug'],
+    # )
+    robot_localization_node = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        parameters=[LaunchConfiguration('odom_config')],
+        remappings=[('odometry/filtered', 'odom')]
     )
 
 
@@ -150,6 +193,12 @@ def generate_launch_description():
     # ld.add_action(throttle_interpolator_node)
     ld.add_action(urg_node)
     ld.add_action(ackermann_mux_node)
-    ld.add_action(static_tf_node)
+    # ld.add_action(static_tf_node1)
+    ld.add_action(static_tf_node2)
+    ld.add_action(static_tf_node3)
+    ld.add_action(twist_stamp_node)
+    ld.add_action(twist_to_ackermann_node)
+    # ld.add_action(rf2o_laser_odometry_node)
+    ld.add_action(robot_localization_node)
 
     return ld
