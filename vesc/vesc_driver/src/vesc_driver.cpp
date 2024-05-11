@@ -77,6 +77,9 @@ VescDriver::VescDriver(const rclcpp::NodeOptions & options)
     return;
   }
 
+  // vescの更新レート
+  int update_rate = declare_parameter<int>("update_rate", 50);
+
   // create vesc state (telemetry) publisher
   state_pub_ = create_publisher<VescStateStamped>("sensors/core", rclcpp::QoS{10});
   imu_pub_ = create_publisher<VescImuStamped>("sensors/imu", rclcpp::QoS{10});
@@ -104,7 +107,7 @@ VescDriver::VescDriver(const rclcpp::NodeOptions & options)
     "commands/servo/position", rclcpp::QoS{10}, std::bind(&VescDriver::servoCallback, this, _1));
 
   // create a 50Hz timer, used for state machine & polling VESC telemetry
-  timer_ = create_wall_timer(20ms, std::bind(&VescDriver::timerCallback, this));
+  timer_ = create_wall_timer(std::chrono::milliseconds(1000) / update_rate, std::bind(&VescDriver::timerCallback, this));
 }
 
 /* TODO or TO-THINKABOUT LIST
